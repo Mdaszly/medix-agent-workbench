@@ -130,8 +130,10 @@ def check_chat_dify(skip: bool = False) -> bool:
         "message": "你好，我发烧了",
         "patient_context": {"age": 30, "gender": "男"},
     }
-    timeout = int(os.getenv("DIFY_TIMEOUT", "90")) + 30
-    print(f"  请求中（最长 {timeout}s）...")
+    # Dify 工作流含 3 个 HTTP 节点 + LLM，正常约 60-90s，留足重试余量
+    dify_timeout = int(os.getenv("DIFY_TIMEOUT", "90"))
+    timeout = dify_timeout * 2 + 60
+    print(f"  请求中（Dify 正常 60-90s，最长等待 {timeout}s）...")
     t0 = time.time()
     try:
         r = requests.post(f"{BASE}/api/chat/dify", json=payload, timeout=timeout)
