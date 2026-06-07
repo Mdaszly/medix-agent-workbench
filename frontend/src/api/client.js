@@ -20,6 +20,20 @@ export async function runConsultation(payload) {
   return data
 }
 
+/** 阶段 2：统一编排路由（Swarm / LangGraph / Dify） */
+export async function runConsultationOrchestrated(payload) {
+  const { data } = await api.post('/api/chat/route', payload)
+  return data
+}
+
+export async function resumeLangGraph(sessionId, confirmed = true) {
+  const { data } = await api.post('/api/chat/langgraph/resume', {
+    session_id: sessionId,
+    confirmed
+  })
+  return data
+}
+
 export async function runMedication(payload) {
   const { data } = await api.post('/api/medication', payload)
   return data

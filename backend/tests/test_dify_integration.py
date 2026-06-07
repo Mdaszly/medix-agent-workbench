@@ -120,14 +120,15 @@ class TestChatDifyEndpoint:
         from main import app
         return TestClient(app)
 
-    def test_dify_not_configured(self, client):
+    def test_dify_not_configured_falls_back_langgraph(self, client):
         with patch("app.api.chat.dify_integration") as mock_int:
             mock_int.enabled = False
             resp = client.post("/api/chat/dify", json={"message": "我发烧了"})
             assert resp.status_code == 200
             body = resp.json()
             assert body["metrics"]["dify_enabled"] is False
-            assert "未配置" in body["answer"]
+            assert body["metrics"]["fallback"] is True
+            assert body["metrics"]["orchestrator"] == "langgraph"
 
     def test_dify_success(self, client):
         mock_client = MagicMock()
@@ -159,18 +160,12 @@ class TestChatDifyEndpoint:
         with patch("app.api.chat.dify_integration") as mock_int:
             mock_int.enabled = True
             mock_int.get_client.return_value = mock_client
-            with patch("app.api.chat.run_workflow") as mock_wf:
-                mock_wf.return_value = {
-                    "answer": "降级回答",
-                    "risk_level": "低风险",
-                    "department": "内科",
-                }
-                resp = client.post("/api/chat/dify", json={"message": "胸痛"})
-                assert resp.status_code == 200
-                body = resp.json()
-                assert body["metrics"]["fallback"] is True
-                assert body["metrics"]["dify_used"] is False
-                assert body["metrics"]["orchestrator"] == "langgraph"
+            resp = client.post("/api/chat/dify", json={"message": "胸痛"})
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["metrics"]["fallback"] is True
+            assert body["metrics"]["orchestrator"] == "langgraph"
+            assert body["metrics"]["fallback_chain"] == ["dify", "langgraph"]
 
 
 class TestDifyToolEndpoints:

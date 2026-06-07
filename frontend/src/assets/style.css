@@ -416,4 +416,107 @@ button { font: inherit; }
   .nurse-assistant { grid-template-columns: 76px 1fr; }
   .medical-icons { grid-column: 1 / -1; justify-content: flex-start; }
   .form-grid { grid-template-columns: repeat(2, 1fr); }
+  .orchestrator-grid { grid-template-columns: 1fr; }
+}
+
+/* 阶段 2：编排模式选择（ui-ux-pro-max — Healthcare / AI-Native） */
+.orchestrator-bar {
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid #99f6e4;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ecfeff 100%);
+}
+.orchestrator-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.orchestrator-head strong { font-size: 16px; color: #0f766e; }
+.orchestrator-hint { font-size: 13px; color: #64748b; font-weight: 600; }
+.orchestrator-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.orchestrator-card {
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 14px 14px 12px;
+  border-radius: 14px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.orchestrator-card:hover {
+  border-color: #2dd4bf;
+  box-shadow: 0 8px 24px rgba(15, 118, 110, .12);
+  transform: translateY(-1px);
+}
+.orchestrator-card:focus-visible {
+  outline: 3px solid #14b8a6;
+  outline-offset: 2px;
+}
+.orchestrator-card.active {
+  border-color: #0d9488;
+  background: linear-gradient(180deg, #fff, #f0fdfa);
+  box-shadow: 0 10px 28px rgba(13, 148, 136, .18);
+}
+.orchestrator-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.orchestrator-badge.swarm { background: #dbeafe; color: #1d4ed8; }
+.orchestrator-badge.langgraph { background: #ede9fe; color: #6d28d9; }
+.orchestrator-badge.dify { background: #ffedd5; color: #c2410c; }
+.orchestrator-title { font-size: 15px; font-weight: 800; color: #0f172a; }
+.orchestrator-desc { font-size: 12px; color: #475569; line-height: 1.5; }
+.orchestrator-meta { font-size: 11px; color: #64748b; font-weight: 700; margin-top: 2px; }
+.orchestrator-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.metric-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.metric-chip.primary { background: #ccfbf1; color: #0f766e; }
+.metric-chip.warn { background: #fef3c7; color: #b45309; }
+.metric-chip.danger { background: #fee2e2; color: #b91c1c; }
+.metric-chip.ok { background: #dcfce7; color: #15803d; }
+.metric-chip.muted { background: #f1f5f9; color: #64748b; }
+.interrupt-banner {
+  margin-bottom: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #fca5a5;
+  background: #fef2f2;
+  color: #991b1b;
+  line-height: 1.6;
+}
+.interrupt-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) {
+  .orchestrator-card { transition: none; }
+  .orchestrator-card:hover { transform: none; }
 }

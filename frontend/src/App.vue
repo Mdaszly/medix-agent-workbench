@@ -23,7 +23,7 @@
         </div>
         <div class="hero-tags">
           <el-tag type="success">DeepResearch 默认开启</el-tag>
-          <el-tag type="primary">Swarm 多 Agent</el-tag>
+          <el-tag type="primary">三轨编排 Swarm / LangGraph / Dify</el-tag>
           <el-tag type="warning">RAG 证据引用</el-tag>
         </div>
       </section>
@@ -120,13 +120,28 @@
         <div class="panel">
           <div class="panel-title">
             <h2>线上问诊</h2>
-            <el-tag type="success">带会话记忆</el-tag>
+            <el-tag type="success">带会话记忆 · 可切换编排引擎</el-tag>
           </div>
+
+          <OrchestratorSelector v-model="orchestratorMode" />
+          <OrchestratorMetrics :metrics="consultMetrics" />
+
+          <div v-if="pendingInterrupt" class="interrupt-banner">
+            <strong>高风险症状检测</strong>
+            <p>当前 LangGraph 工作流已暂停，请确认已了解需立即就医后再继续。</p>
+            <div class="interrupt-actions">
+              <el-button type="danger" :loading="consultLoading" @click="confirmInterrupt(true)">
+                我已了解，继续查看紧急建议
+              </el-button>
+              <el-button :loading="consultLoading" @click="confirmInterrupt(false)">取消</el-button>
+            </div>
+          </div>
+
           <div class="chat-box" ref="chatBox">
             <div v-for="(msg, index) in messages" :key="index" class="msg" :class="msg.role">
               {{ msg.content }}
             </div>
-            <div v-if="consultLoading" class="msg assistant">AI 正在结合问诊记忆、RAG 与联网证据思考中...</div>
+            <div v-if="consultLoading" class="msg assistant">{{ consultLoadingHint }}</div>
           </div>
           <div class="form-grid compact">
             <label>年龄
@@ -392,6 +407,8 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import OrchestratorSelector from './components/OrchestratorSelector.vue'
+import OrchestratorMetrics from './components/OrchestratorMetrics.vue'
 import {
   cancelAppointment,
   clearAllData,
@@ -404,7 +421,8 @@ import {
   getSchedule,
   getSettings,
   interpretReport,
-  runConsultation,
+  resumeLangGraph,
+  runConsultationOrchestrated,
   runMedication,
   runTriage
 } from './api/client'
@@ -466,6 +484,10 @@ const triageLoading = ref(false)
 const consultText = ref('')
 const consultResult = ref(null)
 const consultLoading = ref(false)
+const consultMetrics = ref({})
+const orchestratorMode = ref('swarm')
+const consultSessionId = ref(null)
+const pendingInterrupt = ref(false)
 const chatBox = ref(null)
 const messages = ref([
   {
@@ -478,6 +500,15 @@ const medicationText = ref('')
 const medicationResult = ref(null)
 const medicationLoading = ref(false)
 const reportLoading = ref(false)
+
+const consultLoadingHint = computed(() => {
+  const map = {
+    swarm: 'Swarm 多 Agent 正在结合 RAG 与联网证据推理…',
+    langgraph: 'LangGraph 状态机执行中…',
+    dify: 'Dify 云端工作流执行中（约 1–2 分钟，请稍候）…'
+  }
+  return map[orchestratorMode.value] || map.swarm
+})
 
 const ResultPanel = defineComponent({
   props: {
@@ -569,23 +600,63 @@ async function submitConsultation() {
     ElMessage.warning('请输入问诊内容')
     return
   }
+  if (pendingInterrupt.value) {
+    ElMessage.warning('请先确认或取消高风险提醒')
+    return
+  }
   const userText = consultText.value
   messages.value.push({ role: 'user', content: userText })
   consultText.value = ''
   consultLoading.value = true
   await scrollChat()
   try {
-    const result = await runConsultation({
+    const result = await runConsultationOrchestrated({
       ...buildPayload(userText, 'consultation'),
-      messages: messages.value.slice(-8)
+      orchestrator: orchestratorMode.value,
+      session_id: consultSessionId.value || undefined
     })
+    consultSessionId.value = result.session_id
     consultResult.value = withKey(result)
-    messages.value.push({ role: 'assistant', content: result.answer || '已完成分析，请结合医生意见判断。' })
+    consultMetrics.value = result.metrics || {}
+
+    if (result.metrics?.interrupted) {
+      pendingInterrupt.value = true
+      messages.value.push({
+        role: 'assistant',
+        content: result.answer || '检测到高风险症状，请确认已了解需立即就医。'
+      })
+    } else {
+      messages.value.push({
+        role: 'assistant',
+        content: result.answer || '已完成分析，请结合医生意见判断。'
+      })
+    }
     await refreshAfterAction()
   } catch (error) {
     messages.value.push({ role: 'assistant', content: `请求失败：${error?.message || '问诊请求失败'}` })
+    consultMetrics.value = {}
   } finally {
     consultLoading.value = false
+    await scrollChat()
+  }
+}
+
+async function confirmInterrupt(confirmed) {
+  if (!consultSessionId.value) return
+  consultLoading.value = true
+  try {
+    const result = await resumeLangGraph(consultSessionId.value, confirmed)
+    consultResult.value = withKey(result)
+    consultMetrics.value = result.metrics || {}
+    pendingInterrupt.value = Boolean(result.metrics?.interrupted)
+    if (result.answer) {
+      messages.value.push({ role: 'assistant', content: result.answer })
+    }
+  } catch (error) {
+    ElMessage.error(error?.message || '确认失败')
+  } finally {
+    consultLoading.value = false
+    pendingInterrupt.value = false
     await scrollChat()
   }
 }
@@ -727,6 +798,9 @@ async function clearSystemData() {
   await clearAllData()
   triageResult.value = null
   consultResult.value = null
+  consultMetrics.value = {}
+  consultSessionId.value = null
+  pendingInterrupt.value = false
   medicationResult.value = null
   appointmentInfo.value = null
   appointments.value = []

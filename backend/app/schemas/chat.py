@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
+
+
+OrchestratorMode = Literal["swarm", "langgraph", "dify"]
 
 
 class PatientContext(BaseModel):
@@ -19,6 +22,7 @@ class ChatRequest(BaseModel):
     user_id: str = "demo_user"
     patient_context: PatientContext = Field(default_factory=PatientContext)
     enable_deep_search: bool = True
+    orchestrator: OrchestratorMode = "swarm"
 
 
 class LangGraphResumeRequest(BaseModel):
