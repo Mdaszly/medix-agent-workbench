@@ -22,7 +22,13 @@ export async function runConsultation(payload) {
 
 /** 阶段 2：统一编排路由（Swarm / LangGraph / Dify） */
 export async function runConsultationOrchestrated(payload) {
-  const { data } = await api.post('/api/chat/route', payload)
+  const mode = payload.orchestrator || 'swarm'
+  const endpoints = {
+    swarm: '/api/chat',
+    langgraph: '/api/chat/langgraph',
+    dify: '/api/chat/dify'
+  }
+  const { data } = await api.post(endpoints[mode] || '/api/chat/route', payload)
   return data
 }
 
