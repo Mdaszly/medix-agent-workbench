@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PR学习需求阶段流程图</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Microsoft YaHei", Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .flowchart {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .stage {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 16px 24px;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .stage:hover {
+            transform: translateX(10px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+        .stage-number {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .stage-content {
+            flex: 1;
+        }
+        .stage-title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+        .stage-details {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        .stage-details strong {
+            color: #ffd700;
+        }
+        .arrow {
+            text-align: center;
+            color: #667eea;
+            font-size: 24px;
+            text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+        }
+        .pain-point {
+            color: #ff6b6b;
+        }
+        .opportunity {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .opportunity .stage-details strong {
+            color: #ffe66d;
+        }
+    </style>
+</head>
+<body>
+    <div class="flowchart">
+        <div class="stage">
+            <div class="stage-number">A</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段1：需求产生</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>期末作业+求职需要，决定学PR<br>
+                    <strong>想法：</strong>"网上教程便宜，能学会吗？"<br>
+                    <strong>情绪：</strong>期待 | <span class="pain-point"><strong>痛点：</strong>信息杂，不知道怎么入门</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">B</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段2：选择平台</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>对比B站/网易云课堂等平台<br>
+                    <strong>想法：</strong>"免费课怕水，付费课太贵"<br>
+                    <strong>情绪：</strong>纠结 | <span class="pain-point"><strong>痛点：</strong>课程质量参差不齐，超预算</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">C</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段3：浏览课程</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>搜"PR零基础教程"，看评价<br>
+                    <strong>想法：</strong>"课太老/太啰嗦，不想浪费时间"<br>
+                    <strong>情绪：</strong>焦虑 | <span class="pain-point"><strong>痛点：</strong>筛选差，广告多，内容不符</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">D</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段4：报名学习</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>找学生优惠，买99元入门课<br>
+                    <strong>想法：</strong>"便宜试试，别三分钟热度"<br>
+                    <strong>情绪：</strong>忐忑 | <span class="pain-point"><strong>痛点：</strong>无退款保障，怕浪费钱</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">E</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段5：观看练习</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>碎片时间倍速看课，同步操作<br>
+                    <strong>想法：</strong>"老师讲太快，快捷键对不上"<br>
+                    <strong>情绪：</strong>烦躁 | <span class="pain-point"><strong>痛点：</strong>无练习时间，无答疑，缺素材</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">F</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段6：完成作业</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>剪作品，发班级群求意见<br>
+                    <strong>想法：</strong>"不知道哪里能改进，没人批改"<br>
+                    <strong>情绪：</strong>挫败 | <span class="pain-point"><strong>痛点：</strong>无作业批改，无社群反馈</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">G</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段7：成果运用</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>完成期末作业，做作品集投简历<br>
+                    <strong>想法：</strong>"学的和用的不一样，不会实战"<br>
+                    <strong>情绪：</strong>惊喜 | <span class="pain-point"><strong>痛点：</strong>基础为主，缺实战，与求职脱节</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="arrow">↓</div>
+        
+        <div class="stage">
+            <div class="stage-number">H</div>
+            <div class="stage-content">
+                <div class="stage-title">阶段8：复盘总结</div>
+                <div class="stage-details">
+                    <strong>行为：</strong>整理笔记，收藏进阶课<br>
+                    <strong>想法：</strong>"下次要找带实战和答疑的课"<br>
+                    <strong>情绪：</strong>满足 | <span class="pain-point"><strong>痛点：</strong>无进度跟踪，易半途而废<br>
+                    <strong style="color: #38ef7d;">机会点：</strong>学生低价课+批改+实战项目</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

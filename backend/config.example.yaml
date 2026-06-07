@@ -1,0 +1,22 @@
+llm:
+  api_key: ""
+  base_url: "https://www.dmxapi.cn/v1"
+  model_name: "gpt-5-mini"
+  temperature: 0.3
+  max_tokens: 1800
+
+server:
+  host: "127.0.0.1"
+  port: 8012
+
+rag:
+  knowledge_dir: "../data/knowledge_base"
+  top_k: 5
+
+database:
+  sqlite_path: "../data/runtime/medix_enterprise.db"
+
+features:
+  enable_llm: false
+  enable_deep_search: true
+  enable_mock_when_llm_missing: true
