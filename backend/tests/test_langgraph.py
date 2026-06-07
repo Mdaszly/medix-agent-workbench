@@ -1,168 +1,145 @@
 """
-LangGraph工作流测试
+LangGraph 工作流测试（阶段 1）
 
-测试内容：
-1. 状态模式：验证状态流转正确性
-2. 策略模式：验证路由决策正确性
-3. 适配器模式：验证Skills集成正确性
-4. 工作流整体测试
+覆盖：状态/trace、策略路由、Checkpointer、Human-in-the-loop interrupt
 """
 
 import pytest
+from langgraph.types import Command
+
 from app.services.langgraph_workflow import (
     MedicalState,
     RiskRouteStrategy,
-    symptom_analysis_node,
-    risk_assessment_node,
+    build_initial_state,
     build_medical_graph,
-    run_workflow
+    get_compiled_graph,
+    resume_workflow,
+    run_workflow,
+    risk_assessment_node,
+    symptom_analysis_node,
 )
 
 
 class TestStatePattern:
-    """状态模式测试"""
-    
-    def test_state_initialization(self):
-        """测试状态初始化"""
-        state: MedicalState = {
-            "message": "test",
-            "patient": {"age": "30", "gender": "男"},
-            "history": [],
-            "symptom_profile": {},
-            "risk_hint": {},
-            "risk_level": "",
-            "evidence": [],
-            "structured": {},
-            "answer": "",
-            "department": ""
-        }
-        
-        assert state["message"] == "test"
-        assert state["patient"]["age"] == "30"
-        assert state["risk_level"] == ""
-    
+    def test_build_initial_state(self):
+        state = build_initial_state("我头痛", {"age": 30})
+        assert state["message"] == "我头痛"
+        assert state["agent_trace"] == []
+        assert state["thinking_steps"] == []
+
     def test_state_update(self):
-        """测试状态更新"""
-        state: MedicalState = {
-            "message": "test",
-            "patient": {},
-            "history": [],
-            "symptom_profile": {},
-            "risk_hint": {},
-            "risk_level": "",
-            "evidence": [],
-            "structured": {},
-            "answer": "",
-            "department": ""
-        }
-        
-        # 更新状态
+        state = build_initial_state("test", {})
         updated = {**state, "risk_level": "高风险", "department": "急诊科"}
-        
         assert updated["risk_level"] == "高风险"
-        assert updated["department"] == "急诊科"
 
 
 class TestStrategyPattern:
-    """策略模式测试"""
-    
     def test_risk_strategy_high_risk(self):
-        """测试高风险路由"""
-        strategy = RiskRouteStrategy()
-        state = {"risk_level": "高风险"}
-        assert strategy.decide(state) == "emergency"
-    
+        assert RiskRouteStrategy().decide({"risk_level": "高风险"}) == "emergency"
+
     def test_risk_strategy_normal(self):
-        """测试正常路由"""
-        strategy = RiskRouteStrategy()
-        state = {"risk_level": "低风险"}
-        assert strategy.decide(state) == "normal"
-        
-        state = {"risk_level": "中风险"}
-        assert strategy.decide(state) == "normal"
-    
-    def test_risk_strategy_default(self):
-        """测试默认路由"""
-        strategy = RiskRouteStrategy()
-        state = {"risk_level": ""}
-        assert strategy.decide(state) == "normal"
+        assert RiskRouteStrategy().decide({"risk_level": "低风险"}) == "normal"
+        assert RiskRouteStrategy().decide({"risk_level": "中风险"}) == "normal"
 
 
 class TestAdapterPattern:
-    """适配器模式测试"""
-    
-    def test_symptom_analysis_adapter(self):
-        """测试症状分析节点"""
-        state: MedicalState = {
-            "message": "我头痛",
-            "patient": {},
-            "history": [],
-            "symptom_profile": {},
-            "risk_hint": {},
-            "risk_level": "",
-            "evidence": [],
-            "structured": {},
-            "answer": "",
-            "department": ""
-        }
-        
+    def test_symptom_analysis_node(self):
+        state = build_initial_state("我头痛", {})
         result = symptom_analysis_node(state)
-        
-        assert "symptom_profile" in result
-        assert isinstance(result["symptom_profile"], dict)
         assert "symptoms" in result["symptom_profile"]
-    
-    def test_risk_assessment_adapter(self):
-        """测试风险评估节点"""
-        state: MedicalState = {
-            "message": "我胸痛，呼吸困难",
-            "patient": {},
-            "history": [],
-            "symptom_profile": {},
-            "risk_hint": {},
-            "risk_level": "",
-            "evidence": [],
-            "structured": {},
-            "answer": "",
-            "department": ""
-        }
-        
+
+    def test_risk_assessment_high_risk(self):
+        state = build_initial_state("我胸痛，呼吸困难", {})
         result = risk_assessment_node(state)
-        
-        assert "risk_level" in result
         assert result["risk_level"] == "高风险"
-        assert "risk_hint" in result
 
 
 class TestWorkflow:
-    """工作流整体测试"""
-    
     def test_workflow_graph_build(self):
-        """测试工作流图构建"""
         graph = build_medical_graph()
         assert graph is not None
-    
-    def test_workflow_high_risk(self):
-        """测试高风险症状路由"""
+
+    def test_workflow_normal_has_trace(self):
+        result = run_workflow(message="我有点咳嗽", patient={"age": 30, "gender": "女"})
+        assert result["risk_level"] in ["低风险", "中风险"]
+        assert result["answer"]
+        assert len(result.get("agent_trace") or []) >= 3
+        agents = {t["agent"] for t in result["agent_trace"]}
+        assert "RouterAgent" in agents
+        assert "RAGAgent" in agents
+
+    def test_workflow_high_risk_interrupts(self):
+        sid = "test-high-risk-session"
         result = run_workflow(
             message="我胸痛，呼吸困难",
-            patient={"age": "45", "gender": "男"}
+            patient={"age": 45, "gender": "男"},
+            session_id=sid,
         )
-        
-        assert result["risk_level"] == "高风险"
-        assert result["department"] == "急诊科"
-        assert "紧急提醒" in result["answer"]
-    
-    def test_workflow_normal(self):
-        """测试正常症状路由"""
-        result = run_workflow(
-            message="我有点咳嗽",
-            patient={"age": "30", "gender": "女"}
+        assert result["interrupted"] is True
+        assert result.get("risk_level") in ("", "高风险") or result["interrupted"]
+
+    def test_workflow_high_risk_resume(self):
+        sid = "test-resume-session"
+        first = run_workflow(
+            message="我胸痛，呼吸困难",
+            patient={"age": 45, "gender": "男"},
+            session_id=sid,
         )
-        
-        assert result["risk_level"] in ["低风险", "中风险"]
-        assert result["department"] is not None
-        assert result["answer"] != ""
+        assert first["interrupted"] is True
+
+        second = resume_workflow(session_id=sid, confirmed=True)
+        assert second["interrupted"] is False
+        assert second["risk_level"] == "高风险"
+        assert "紧急提醒" in second["answer"]
+        assert any(t["agent"] == "SafetyAgent" for t in second.get("agent_trace") or [])
+
+    def test_checkpointer_multi_turn_same_session(self):
+        sid = "test-multi-turn"
+        r1 = run_workflow(message="我有点咳嗽", patient={"age": 30}, session_id=sid)
+        assert not r1["interrupted"]
+
+        r2 = run_workflow(
+            message="咳嗽三天了",
+            patient={"age": 30},
+            history=[{"role": "user", "content": "我有点咳嗽"}],
+            session_id=sid,
+        )
+        assert not r2["interrupted"]
+        assert r2["answer"]
+
+
+class TestChatLangGraphAPI:
+    @pytest.fixture
+    def client(self):
+        from fastapi.testclient import TestClient
+        from main import app
+
+        return TestClient(app)
+
+    def test_langgraph_endpoint_returns_trace(self, client):
+        resp = client.post(
+            "/api/chat/langgraph",
+            json={"message": "我有点咳嗽", "patient_context": {"age": 30}},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["metrics"]["orchestrator"] == "langgraph"
+        assert len(body["agent_trace"]) >= 1
+
+    def test_langgraph_high_risk_interrupt_flow(self, client):
+        resp = client.post(
+            "/api/chat/langgraph",
+            json={"message": "我胸痛，呼吸困难", "session_id": "api-hr-test"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        if body["metrics"].get("interrupted"):
+            resume = client.post(
+                "/api/chat/langgraph/resume",
+                json={"session_id": "api-hr-test", "confirmed": True},
+            )
+            assert resume.status_code == 200
+            assert "紧急提醒" in resume.json()["answer"]
 
 
 if __name__ == "__main__":

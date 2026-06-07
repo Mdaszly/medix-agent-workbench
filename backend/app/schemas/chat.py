@@ -21,6 +21,11 @@ class ChatRequest(BaseModel):
     enable_deep_search: bool = True
 
 
+class LangGraphResumeRequest(BaseModel):
+    session_id: str
+    confirmed: bool = True
+
+
 class Evidence(BaseModel):
     source: str
     title: str
