@@ -8,6 +8,7 @@ from app.core.database import clear_all, clear_session, list_messages, list_sess
 from app.schemas.chat import ChatRequest, ChatResponse
 from app.services.agent_orchestrator import MedicalAgentOrchestrator
 from app.services.langgraph_workflow import run_workflow
+from app.services.dify_client import dify_integration
 
 router = APIRouter(prefix="/api", tags=["chat"])
 orchestrator = MedicalAgentOrchestrator()
@@ -44,6 +45,70 @@ async def chat_langgraph(req: ChatRequest):
         evidence=[],
         agent_trace=[],
         metrics={}
+    )
+
+
+@router.post("/chat/dify", response_model=ChatResponse)
+async def chat_dify(req: ChatRequest):
+    """使用Dify工作流处理问诊请求"""
+    session_id = req.session_id or str(uuid.uuid4())
+    
+    # 检查Dify是否配置
+    if not dify_integration.enabled:
+        return ChatResponse(
+            session_id=session_id,
+            answer="Dify服务未配置，请联系管理员配置DIFY_API_KEY和DIFY_APP_ID环境变量。",
+            risk_level="低风险",
+            suggestions=[],
+            recommended_department="内科",
+            thinking_steps=[],
+            disclaimer=DISCLAIMER,
+            evidence=[],
+            agent_trace=[],
+            metrics={"dify_enabled": False}
+        )
+    
+    # 调用Dify工作流
+    result = dify_integration.run_medical_workflow(
+        message=req.message,
+        patient=req.patient_context.model_dump()
+    )
+    
+    # 处理Dify响应
+    if result.get("status") == "error":
+        # Dify调用失败，降级到LangGraph
+        fallback_result = run_workflow(
+            message=req.message,
+            patient=req.patient_context.model_dump(),
+            history=[]
+        )
+        return ChatResponse(
+            session_id=session_id,
+            answer=fallback_result.get("answer", ""),
+            risk_level=fallback_result.get("risk_level", "低风险"),
+            suggestions=[],
+            recommended_department=fallback_result.get("department", "内科"),
+            thinking_steps=[],
+            disclaimer=DISCLAIMER,
+            evidence=[],
+            agent_trace=[],
+            metrics={"dify_enabled": True, "dify_used": False, "fallback": True}
+        )
+    
+    # 解析Dify工作流输出
+    outputs = result.get("outputs", {})
+    
+    return ChatResponse(
+        session_id=session_id,
+        answer=outputs.get("answer", "") or result.get("answer", ""),
+        risk_level=outputs.get("risk_level", "低风险"),
+        suggestions=[],
+        recommended_department=outputs.get("department", "内科"),
+        thinking_steps=[],
+        disclaimer=DISCLAIMER,
+        evidence=[],
+        agent_trace=[],
+        metrics={"dify_enabled": True, "dify_used": True}
     )
 
 

@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.chat import router as chat_router
 from app.api.metrics import router as metrics_router
 from app.api.platform import router as platform_router
+from app.services.dify_tools import router as dify_tools_router
 from app.core.database import init_db
 
 app = FastAPI(title="医路通 AI 互联网医院智能服务平台", version="2.1.0")
@@ -32,6 +33,7 @@ async def health():
 app.include_router(chat_router)
 app.include_router(metrics_router)
 app.include_router(platform_router)
+app.include_router(dify_tools_router)
 
 
 if __name__ == "__main__":
