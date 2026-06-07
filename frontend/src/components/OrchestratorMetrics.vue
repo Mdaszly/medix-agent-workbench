@@ -18,7 +18,8 @@
 import { computed } from 'vue'
 
 const props = defineProps({
-  metrics: { type: Object, default: () => ({}) }
+  metrics: { type: Object, default: () => ({}) },
+  mode: { type: String, default: '' }
 })
 
 const labels = {
@@ -27,6 +28,8 @@ const labels = {
   dify: 'Dify'
 }
 
-const orchestratorLabel = computed(() => labels[props.metrics?.orchestrator] || props.metrics?.orchestrator || '未知')
+const orchestratorLabel = computed(
+  () => labels[props.metrics?.orchestrator] || labels[props.mode] || props.metrics?.orchestrator || '未知'
+)
 const chain = computed(() => props.metrics?.fallback_chain || [])
 </script>

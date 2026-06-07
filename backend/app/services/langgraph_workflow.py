@@ -168,6 +168,8 @@ def rag_retrieval_node(state: MedicalState) -> MedicalState:
 
 
 def llm_reasoning_node(state: MedicalState) -> MedicalState:
+    import asyncio
+
     from app.services.llm_client import LLMClient
     from app.services.medical_business import (
         build_system_prompt,
@@ -200,11 +202,13 @@ def llm_reasoning_node(state: MedicalState) -> MedicalState:
             state.get("evidence") or [],
             [],
         )
-        raw = llm.chat(
-            [
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ]
+        raw = asyncio.run(
+            llm.chat(
+                [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt},
+                ]
+            )
         )
         structured = parse_json_object(raw) or parse_narrative_answer(raw, "consultation")
         department = structured.get("recommended_department", "内科")

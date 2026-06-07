@@ -124,7 +124,7 @@
           </div>
 
           <OrchestratorSelector v-model="orchestratorMode" />
-          <OrchestratorMetrics :metrics="consultMetrics" />
+    <OrchestratorMetrics :metrics="consultMetrics" :mode="orchestratorMode" />
 
           <div v-if="pendingInterrupt" class="interrupt-banner">
             <strong>高风险症状检测</strong>
@@ -617,7 +617,10 @@ async function submitConsultation() {
     })
     consultSessionId.value = result.session_id
     consultResult.value = withKey(result)
-    consultMetrics.value = result.metrics || {}
+    consultMetrics.value = {
+      ...(result.metrics || {}),
+      orchestrator: result.metrics?.orchestrator || orchestratorMode.value
+    }
 
     if (result.metrics?.interrupted) {
       pendingInterrupt.value = true
@@ -647,7 +650,10 @@ async function confirmInterrupt(confirmed) {
   try {
     const result = await resumeLangGraph(consultSessionId.value, confirmed)
     consultResult.value = withKey(result)
-    consultMetrics.value = result.metrics || {}
+    consultMetrics.value = {
+      ...(result.metrics || {}),
+      orchestrator: result.metrics?.orchestrator || orchestratorMode.value
+    }
     pendingInterrupt.value = Boolean(result.metrics?.interrupted)
     if (result.answer) {
       messages.value.push({ role: 'assistant', content: result.answer })
