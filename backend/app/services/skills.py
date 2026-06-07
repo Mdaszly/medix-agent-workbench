@@ -30,6 +30,7 @@ HIGH_RISK_KEYWORDS = [
 # Java: public static final List<String> MEDIUM_RISK_KEYWORDS = Arrays.asList(...);
 MEDIUM_RISK_KEYWORDS = [
     "发热",
+    "发烧",
     "头痛",
     "腹痛",
     "呕吐",

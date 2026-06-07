@@ -168,8 +168,6 @@ def rag_retrieval_node(state: MedicalState) -> MedicalState:
 
 
 def llm_reasoning_node(state: MedicalState) -> MedicalState:
-    import asyncio
-
     from app.services.llm_client import LLMClient
     from app.services.medical_business import (
         build_system_prompt,
@@ -202,13 +200,11 @@ def llm_reasoning_node(state: MedicalState) -> MedicalState:
             state.get("evidence") or [],
             [],
         )
-        raw = asyncio.run(
-            llm.chat(
-                [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ]
-            )
+        raw = llm.chat_sync(
+            [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
         )
         structured = parse_json_object(raw) or parse_narrative_answer(raw, "consultation")
         department = structured.get("recommended_department", "内科")
@@ -301,7 +297,11 @@ def build_medical_graph(checkpointer=None):
         _timed_node(
             "ReasoningAgent",
             "llm_reasoning",
-            lambda s: "LLM 结构化推理完成" if s.get("structured") else "推理无输出",
+            lambda s: (
+                "LLM 结构化推理完成"
+                if s.get("structured") and s["structured"].get("reasoning") != "推理异常降级"
+                else "LLM 推理失败，已使用降级模板"
+            ),
             llm_reasoning_node,
         ),
     )

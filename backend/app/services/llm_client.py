@@ -160,3 +160,21 @@ class LLMClient:
         # 执行 POST 请求（类似 restTemplate.postForObject(url, request, Map.class)）
         data = await asyncio.wait_for(post_once(), timeout=timeout + 2)
         return data["choices"][0]["message"]["content"] or ""
+
+    def chat_sync(self, messages: List[Dict[str, str]], timeout: float = 60.0) -> str:
+        """供 LangGraph 等同步节点调用 async chat（兼容 FastAPI 已有事件循环）。"""
+        import concurrent.futures
+
+        def _run() -> str:
+            return asyncio.run(self.chat(messages, timeout))
+
+        try:
+            asyncio.get_running_loop()
+            in_running_loop = True
+        except RuntimeError:
+            in_running_loop = False
+
+        if in_running_loop:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                return executor.submit(_run).result(timeout=timeout + 30)
+        return _run()
