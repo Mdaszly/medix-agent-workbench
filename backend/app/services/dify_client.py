@@ -7,6 +7,7 @@ Dify客户端 - 用于本地系统调用Dify工作流
 """
 
 import os
+import time
 import requests
 from typing import Dict, Any, Optional
 from dotenv import load_dotenv
@@ -53,7 +54,8 @@ class DifyClient:
             response = requests.post(
                 url,
                 headers=self._get_headers(),
-                json={"inputs": inputs}
+                json={"inputs": inputs},
+                timeout=10,
             )
             
             response.raise_for_status()
@@ -67,36 +69,53 @@ class DifyClient:
                 "error_type": "dify_connection_error"
             }
     
-    def send_message(self, message: str, user_id: str = "default") -> Dict[str, Any]:
+    def send_message(self, message: str, user_id: str = "default", inputs: Dict[str, Any] = None) -> Dict[str, Any]:
         """
-        发送消息到Dify应用
+        发送消息到Dify应用（支持Chatflow）
         
-        :param message: 用户消息
+        :param message: 用户消息/问题
         :param user_id: 用户ID
+        :param inputs: 额外输入参数（可选）
         :return: 消息响应
         """
         url = f"{self.base_url}/chat-messages"
         
-        try:
-            response = requests.post(
-                url,
-                headers=self._get_headers(),
-                json={
-                    "inputs": {"message": message},
-                    "response_mode": "blocking",
-                    "user": user_id
-                }
-            )
-            
-            response.raise_for_status()
-            return response.json()
-        
-        except requests.exceptions.RequestException as e:
-            return {
-                "status": "error",
-                "message": f"Dify调用失败: {str(e)}",
-                "error_type": "dify_connection_error"
-            }
+        payload = {
+            "inputs": inputs or {},
+            "query": message,
+            "response_mode": "blocking",
+            "user": user_id,
+            "conversation_id": ""
+        }
+
+        timeout = int(os.getenv("DIFY_TIMEOUT", "90"))
+        last_error: Optional[Exception] = None
+        for attempt in range(2):
+            try:
+                response = requests.post(
+                    url,
+                    headers=self._get_headers(),
+                    json=payload,
+                    timeout=timeout,
+                )
+                response.raise_for_status()
+                result = response.json()
+
+                if "answer" in result:
+                    return result
+                if "output" in result:
+                    return {"answer": result["output"]}
+                return result
+            except requests.exceptions.RequestException as e:
+                last_error = e
+                if attempt < 1:
+                    time.sleep(1.0)
+
+        return {
+            "status": "error",
+            "message": f"Dify调用失败: {last_error}",
+            "error_type": "dify_connection_error",
+        }
     
     def get_workflow_status(self, task_id: str) -> Dict[str, Any]:
         """

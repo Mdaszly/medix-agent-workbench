@@ -47,3 +47,9 @@ htmlcov/
 
 # Trae配置
 .trae/
+
+# 阶段0调试产物
+backend/_*.json
+backend/.tunnel_url
+backend/.tunnel_log
+backend/reports/

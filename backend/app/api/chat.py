@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 
 from fastapi import APIRouter
@@ -68,11 +69,13 @@ async def chat_dify(req: ChatRequest):
             metrics={"dify_enabled": False}
         )
     
-    # 调用Dify工作流
-    result = dify_integration.run_medical_workflow(
+    # 对话型 Chatflow 使用 chat-messages 接口（非 workflows/run）
+    t0 = time.time()
+    result = dify_integration.get_client().send_message(
         message=req.message,
-        patient=req.patient_context.model_dump()
+        user_id=req.user_id,
     )
+    elapsed_ms = int((time.time() - t0) * 1000)
     
     # 处理Dify响应
     if result.get("status") == "error":
@@ -92,7 +95,13 @@ async def chat_dify(req: ChatRequest):
             disclaimer=DISCLAIMER,
             evidence=[],
             agent_trace=[],
-            metrics={"dify_enabled": True, "dify_used": False, "fallback": True}
+            metrics={
+                "dify_enabled": True,
+                "dify_used": False,
+                "fallback": True,
+                "orchestrator": "langgraph",
+                "elapsed_ms": elapsed_ms,
+            }
         )
     
     # 解析Dify工作流输出
@@ -108,7 +117,12 @@ async def chat_dify(req: ChatRequest):
         disclaimer=DISCLAIMER,
         evidence=[],
         agent_trace=[],
-        metrics={"dify_enabled": True, "dify_used": True}
+        metrics={
+            "dify_enabled": True,
+            "dify_used": True,
+            "orchestrator": "dify",
+            "elapsed_ms": elapsed_ms,
+        }
     )
 
 
