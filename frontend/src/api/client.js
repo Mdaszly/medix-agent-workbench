@@ -101,6 +101,8 @@ export async function getSettings() {
 }
 
 export async function clearAllData() {
-  const { data } = await api.delete('/api/sessions')
+  const adminToken = import.meta.env.VITE_ADMIN_API_TOKEN
+  const headers = adminToken ? { 'X-Admin-Token': adminToken } : undefined
+  const { data } = await api.delete('/api/sessions', { headers })
   return data
 }

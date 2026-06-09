@@ -18,7 +18,6 @@ venv/
 node_modules/
 dist/
 build/
-package-lock.json
 yarn.lock
 
 # 运行时数据
@@ -47,6 +46,10 @@ htmlcov/
 
 # Trae配置
 .trae/
+
+# Cursor / 本地计划与调试
+.cursor/
+pr_learning_flowchart.html
 
 # 阶段0调试产物
 backend/_*.json

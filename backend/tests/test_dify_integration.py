@@ -189,6 +189,16 @@ class TestDifyToolEndpoints:
         body = resp.json()
         assert body["status"] == "success"
 
+    def test_knowledge_retrieval_tool(self, client):
+        resp = client.post(
+            "/tools/knowledge_retrieval",
+            json={"input": "糖尿病诊断标准", "top_k": 3},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "success"
+        assert "evidence" in body["result"]
+
     def test_compliance_guard_tool(self, client):
         resp = client.post(
             "/tools/compliance_guard",

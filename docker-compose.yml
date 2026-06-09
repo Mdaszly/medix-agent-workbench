@@ -1,0 +1,26 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      MEDIX_ENABLE_LLM: "false"
+      CORS_ORIGINS: "http://127.0.0.1:5178,http://localhost:5178,http://127.0.0.1:4178,http://localhost:4178"
+      BACKEND_PORT: "8012"
+    ports:
+      - "8012:8012"
+    volumes:
+      - doctor_agent_runtime:/app/data/runtime
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE: "http://127.0.0.1:8012"
+    ports:
+      - "5178:4178"
+    depends_on:
+      - backend
+
+volumes:
+  doctor_agent_runtime:

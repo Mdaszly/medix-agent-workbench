@@ -396,18 +396,6 @@ button { font: inherit; }
 .record-card p { margin: 0; color: #475569; line-height: 1.7; }
 .record-detail h3 { margin: 18px 0 8px; }
 .record-detail p { line-height: 1.8; }
-.footer-watermark {
-  position: fixed;
-  left: 50%;
-  bottom: 12px;
-  transform: translateX(-50%);
-  background: rgba(15,23,42,.84);
-  color: #fff;
-  border-radius: 999px;
-  padding: 8px 22px;
-  font-weight: 800;
-  z-index: 10;
-}
 @media (max-width: 1200px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { display: none; }

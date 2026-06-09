@@ -1,0 +1,14 @@
+flowchart LR
+  User[User] --> Frontend[Vue3_Workbench]
+  Frontend --> Api[FastAPI_API]
+  Api --> Gateway[AgentGateway]
+  Gateway --> Swarm[MedicalSwarm]
+  Gateway --> LangGraph[LangGraph_Workflow]
+  Gateway --> Dify[Dify_Optional]
+  Dify -->|"failure"| LangGraph
+  LangGraph --> RAG[Local_RAG]
+  LangGraph --> Skills[Medical_Skills]
+  LangGraph --> LLM[Optional_LLM]
+  Dify --> Tools[HTTP_Tools]
+  Tools --> Skills
+  Tools --> RAG

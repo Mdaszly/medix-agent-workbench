@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from app.core.database import (
     add_message,
@@ -13,6 +13,7 @@ from app.core.database import (
     upsert_session,
 )
 from app.schemas.chat import ChatRequest, ChatResponse, LangGraphResumeRequest
+from app.core.security import verify_admin_token
 from app.services.agent_gateway import dispatch, resume_langgraph
 from app.services.chat_helpers import load_history
 from app.services.dify_client import dify_integration
@@ -85,13 +86,13 @@ async def session_messages(session_id: str):
     return {"messages": list_messages(session_id, limit=100)}
 
 
-@router.delete("/sessions/{session_id}")
+@router.delete("/sessions/{session_id}", dependencies=[Depends(verify_admin_token)])
 async def delete_session(session_id: str):
     clear_session(session_id)
     return {"ok": True}
 
 
-@router.delete("/sessions")
+@router.delete("/sessions", dependencies=[Depends(verify_admin_token)])
 async def delete_all_sessions():
     clear_all()
     return {"ok": True}

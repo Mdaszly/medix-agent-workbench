@@ -20,3 +20,12 @@ features:
   enable_llm: false
   enable_deep_search: true
   enable_mock_when_llm_missing: true
+
+security:
+  # Runtime environment variables override these where applicable.
+  # Public deployments should restrict CORS and set shared tokens.
+  cors_origins:
+    - "http://127.0.0.1:5178"
+    - "http://localhost:5178"
+  admin_api_token: ""
+  dify_tool_token: ""

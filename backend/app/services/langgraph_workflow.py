@@ -209,7 +209,10 @@ def llm_reasoning_node(state: MedicalState) -> MedicalState:
         structured = parse_json_object(raw) or parse_narrative_answer(raw, "consultation")
         department = structured.get("recommended_department", "内科")
         return {**state, "structured": structured, "department": department}
-    except Exception:
+    except Exception as exc:
+        import logging
+
+        logging.getLogger(__name__).warning("llm_reasoning_node failed: %s", exc, exc_info=True)
         structured = {
             "risk_level": state.get("risk_level", "低风险"),
             "recommended_department": "内科",
@@ -244,7 +247,9 @@ def normal_response_node(state: MedicalState) -> MedicalState:
     structured = state.get("structured") or {}
     department = normalize_department(structured.get("recommended_department"), "consultation")
     risk_level = normalize_risk(structured.get("risk_level"))
-    answer = compliance_guard(render_answer("consultation", structured, department, risk_level))
+    answer = compliance_guard(
+        render_answer("consultation", structured, department, risk_level, state.get("message", ""))
+    )
     return {**state, "answer": answer, "department": department, "risk_level": risk_level}
 
 

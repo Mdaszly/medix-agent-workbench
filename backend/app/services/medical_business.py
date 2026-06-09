@@ -277,7 +277,7 @@ class MedicalSwarm:
         # Java: String riskLevel = normalizeRisk(structured.get("risk_level"));
         risk_level = normalize_risk(structured.get("risk_level"))
         # Java: String answer = renderAnswer(scene, structured, department, riskLevel);
-        answer = render_answer(scene, structured, department, risk_level)
+        answer = render_answer(scene, structured, department, risk_level, message)
         # Java: answer = complianceGuard(answer);  // AOP 合规检查
         answer = compliance_guard(answer)
         step("SafetyAgent", "guard", "完成医疗安全边界、免责声明和非诊断化表达检查")
@@ -471,6 +471,22 @@ class ConsultationService:
         )
 
 
+FACTUAL_QUESTION_PATTERNS = [
+    r"具体数值|标准是多少|正常范围|正常值|指标.*多少",
+    r"诊断标准|怎么诊断|如何诊断|确诊.*(通过|依据|标准|需要)",
+    r"(什么是|什么叫|是什么意思)",
+    r"(还是|或者).*(还是|或者)",
+    r"多少算|多高算|多低算|阈值",
+]
+
+
+def is_factual_medical_question(message: str) -> bool:
+    text = (message or "").strip()
+    if not text:
+        return False
+    return any(re.search(pattern, text) for pattern in FACTUAL_QUESTION_PATTERNS)
+
+
 def build_system_prompt(scene: str) -> str:
     if scene == "medication":
         role = (
@@ -492,9 +508,11 @@ def build_system_prompt(scene: str) -> str:
 1. 必须综合患者信息、本地RAG证据、联网DeepResearch资料和对话记忆，不要只做关键词分类。
 2. recommended_department 必须从以下列表选择一个：{DEPARTMENTS}。
 3. 用药咨询优先选择“药学门诊”，但如果涉及明显疾病就诊，也可以在 reasoning 中建议同时咨询相关专科。
-4. 不能确诊，不能开处方，不能给具体处方剂量。
-5. 如果信息不足，要写 next_questions，而不是强行下结论。
-6. 必须只输出合法 JSON，不要 Markdown，不要代码块。
+4. 不能对患者做个体确诊，不能开处方，不能给具体处方剂量。
+5. 若用户问的是指南标准、检查方法、指标阈值等通用医学知识，应直接在 conclusion 中作答；引用 RAG 证据说明空腹血糖、餐后血糖、糖化血红蛋白等标准值，这不属于确诊患者。
+6. 仅当用户描述个人症状或病史、需要你帮助判断风险与就医方向时，若信息不足才写 next_questions，不要强行下结论。
+7. 科普标准题：red_flags 可留空；next_questions 仅在与该患者后续管理相关时填写。
+8. 必须只输出合法 JSON，不要 Markdown，不要代码块。
 
 JSON 字段模板：
 {json.dumps(BASE_JSON_SCHEMA, ensure_ascii=False)}
@@ -533,6 +551,7 @@ def build_user_prompt(
 
 RAG 与 DeepResearch 证据：
 {build_context(evidence)}
+{"【问题类型】通用医学知识/标准咨询 — 请优先在 conclusion 中直接回答用户所问的标准、指标或检查方法，不要把「缺少患者化验值」当作拒答理由。" if is_factual_medical_question(message) else ""}
 
 请你基于以上所有信息进行医学科普级推理，输出合法 JSON。"""
 
@@ -748,7 +767,15 @@ def normalize_risk(value: Any) -> str:
     return "低风险"
 
 
-def render_answer(scene: str, data: Dict[str, Any], department: str, risk_level: str) -> str:
+def render_answer(
+    scene: str,
+    data: Dict[str, Any],
+    department: str,
+    risk_level: str,
+    message: str = "",
+) -> str:
+    if is_factual_medical_question(message):
+        return _render_factual_answer(data, department)
     red_flags = ensure_list(data.get("red_flags"))
     next_questions = ensure_list(data.get("next_questions"))
     care_advice = ensure_list(data.get("care_advice"))
@@ -774,6 +801,25 @@ def render_answer(scene: str, data: Dict[str, Any], department: str, risk_level:
     evidence_summary = data.get("evidence_summary")
     if evidence_summary:
         lines += ["", "证据摘要：", str(evidence_summary)]
+    return "\n".join(lines)
+
+
+def _render_factual_answer(data: Dict[str, Any], department: str) -> str:
+    care_advice = ensure_list(data.get("care_advice"))
+    lines = [
+        str(data.get("conclusion") or "已根据指南与知识库证据整理如下。"),
+        "",
+        "依据：",
+        str(
+            data.get("reasoning")
+            or data.get("evidence_summary")
+            or "模型结合 RAG 证据与公开医学指南整理。"
+        ),
+    ]
+    if care_advice:
+        lines += ["", "补充说明：", *[f"- {item}" for item in care_advice[:3]]]
+    if department:
+        lines += ["", f"如需结合个人情况进一步评估，可咨询：{department}"]
     return "\n".join(lines)
 
 
@@ -808,10 +854,17 @@ def build_search_query(scene: str, message: str, patient: Dict[str, Any], histor
     return f"线上问诊 健康科普 就医建议 推荐科室 {message} {history_text} {patient}"
 
 
-def build_context(evidence: List[Evidence]) -> str:
+def build_context(evidence: List[Evidence | Dict[str, Any]]) -> str:
     if not evidence:
         return "暂无可用证据。"
-    return "\n\n".join([f"[{idx + 1}] {item.title} | {item.source} | score={item.score}\n{item.content[:700]}" for idx, item in enumerate(evidence[:8])])
+    lines: List[str] = []
+    for idx, item in enumerate(evidence[:8]):
+        if isinstance(item, dict):
+            item = Evidence(**item)
+        lines.append(
+            f"[{idx + 1}] {item.title} | {item.source} | score={item.score}\n{item.content[:700]}"
+        )
+    return "\n\n".join(lines)
 
 
 def departments() -> List[str]:

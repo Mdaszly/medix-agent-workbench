@@ -386,8 +386,6 @@
         </div>
       </section>
 
-      <div class="footer-watermark">闲鱼：橙味Ayami，禁止二卖</div>
-
       <el-dialog v-model="recordDialogVisible" title="问诊记录详情" width="760px">
         <div v-if="selectedRecord" class="record-detail">
           <h3>主诉</h3>

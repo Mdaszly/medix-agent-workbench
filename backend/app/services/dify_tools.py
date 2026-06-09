@@ -7,16 +7,22 @@ Dify工具服务 - 将现有Skills暴露为Dify可调用的HTTP工具
 """
 
 from typing import Dict, Any, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends
 
+from app.core.security import verify_dify_tool_token
+from app.services.rag_service import RAGService
 from app.services.skills import (
     analyze_symptoms,
     assess_risk,
     compliance_guard,
-    lifestyle_recommendations
+    lifestyle_recommendations,
 )
 
-router = APIRouter(prefix="/tools", tags=["dify-tools"])
+router = APIRouter(
+    prefix="/tools",
+    tags=["dify-tools"],
+    dependencies=[Depends(verify_dify_tool_token)],
+)
 
 
 class DifyToolResponse:
@@ -117,6 +123,38 @@ async def tool_compliance_guard(request: Dict[str, Any]):
         return DifyToolResponse.error(str(e))
 
 
+@router.post("/knowledge_retrieval")
+async def tool_knowledge_retrieval(request: Dict[str, Any]):
+    """
+    知识库检索工具 - 从本地 RAG 知识库召回医学证据
+
+    Dify工具参数：
+    - input: 检索 query（通常为用户主诉）
+    - top_k: 返回条数（可选，默认 5）
+    """
+    try:
+        message = request.get("input", "") or request.get("query", "")
+        if not message:
+            raise ValueError("缺少输入参数")
+
+        top_k = int(request.get("top_k", 5))
+        rag = RAGService()
+        hits = rag.search(message, top_k=top_k)
+        evidence = [
+            {
+                "title": item.title,
+                "source": item.source,
+                "score": item.score,
+                "content": item.content[:600],
+            }
+            for item in hits
+        ]
+        return DifyToolResponse.success({"evidence": evidence, "count": len(evidence)})
+
+    except Exception as e:
+        return DifyToolResponse.error(str(e))
+
+
 @router.post("/lifestyle_recommendations")
 async def tool_lifestyle_recommendations(request: Dict[str, Any]):
     """
@@ -178,5 +216,13 @@ def get_tool_metadata() -> Dict[str, Dict[str, Any]]:
                 {"name": "input", "type": "string", "required": True, "description": "用户症状描述"},
                 {"name": "patient_info", "type": "object", "required": False, "description": "患者基本信息"}
             ]
-        }
+        },
+        "knowledge_retrieval": {
+            "name": "knowledge_retrieval",
+            "description": "从本地医学知识库检索循证证据，供 LLM 整合回答",
+            "parameters": [
+                {"name": "input", "type": "string", "required": True, "description": "检索 query"},
+                {"name": "top_k", "type": "number", "required": False, "description": "返回条数，默认 5"},
+            ],
+        },
     }

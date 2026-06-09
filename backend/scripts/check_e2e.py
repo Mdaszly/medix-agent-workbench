@@ -165,7 +165,13 @@ def print_tunnel_hints() -> None:
     url = TUNNEL
     if url:
         print("\n--- Dify HTTP 节点 URL（复制到工作流）---")
-        for path in ("symptom_analysis", "risk_assessment", "compliance_guard"):
+        for path in (
+            "symptom_analysis",
+            "risk_assessment",
+            "knowledge_retrieval",
+            "compliance_guard",
+            "lifestyle_recommendations",
+        ):
             print(f"  {url}/tools/{path}")
 
 
