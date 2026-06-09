@@ -7,8 +7,17 @@ on:
 
 jobs:
   backend:
-    name: Backend tests
+    name: Backend tests (${{ matrix.test_file }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        test_file:
+          - test_agent_gateway.py
+          - test_dify_integration.py
+          - test_langgraph.py
+          - test_medical_answer.py
+          - test_security_boundaries.py
     defaults:
       run:
         working-directory: backend
@@ -34,22 +43,7 @@ jobs:
           PYTHONUTF8: "1"
           LANG: "C.UTF-8"
           LC_ALL: "C.UTF-8"
-        run: |
-          set -o pipefail
-          python -m pytest -v --tb=short -ra 2>&1 | tee pytest-output.txt
-          status=${PIPESTATUS[0]}
-          if [ "$status" -ne 0 ]; then
-            {
-              echo "### Pytest failed"
-              echo '```text'
-              tail -120 pytest-output.txt
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            grep -E 'FAILED|ERROR' pytest-output.txt | head -20 | while IFS= read -r line; do
-              echo "::error title=pytest::${line}"
-            done
-            exit "$status"
-          fi
+        run: python -m pytest tests/${{ matrix.test_file }} -q --tb=short
 
   frontend:
     name: Frontend build
