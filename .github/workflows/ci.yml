@@ -32,20 +32,12 @@ jobs:
           MEDIX_ENABLE_LLM: "false"
           DIFY_API_KEY: ""
           DIFY_APP_ID: ""
+          DIFY_TOOL_TOKEN: ""
+          ADMIN_API_TOKEN: ""
           PYTHONUTF8: "1"
           LANG: "C.UTF-8"
           LC_ALL: "C.UTF-8"
-        run: |
-          set -o pipefail
-          failed=0
-          for test_file in tests/test_*.py; do
-            echo "Running ${test_file}"
-            if ! python -m pytest "${test_file}" -q --tb=short; then
-              echo "::error title=pytest::${test_file} failed on Linux CI"
-              failed=1
-            fi
-          done
-          exit "${failed}"
+        run: python -m pytest -q --tb=short
 
   frontend:
     name: Frontend build

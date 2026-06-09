@@ -26,6 +26,9 @@ def stabilize_ci_dependencies(monkeypatch):
     if not os.getenv("CI"):
         return
 
+    for key in ("DIFY_TOOL_TOKEN", "ADMIN_API_TOKEN", "DIFY_API_KEY", "DIFY_APP_ID"):
+        monkeypatch.delenv(key, raising=False)
+
     async def _offline_web_search(query: str, limit: int = 2, timeout: float = 8.0):
         from app.schemas.chat import Evidence
 
