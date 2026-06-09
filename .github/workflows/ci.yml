@@ -19,7 +19,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -28,13 +28,28 @@ jobs:
 
       - name: Run pytest
         env:
+          CI: "true"
           MEDIX_ENABLE_LLM: "false"
           DIFY_API_KEY: ""
           DIFY_APP_ID: ""
           PYTHONUTF8: "1"
           LANG: "C.UTF-8"
           LC_ALL: "C.UTF-8"
-        run: python -m pytest -q --tb=short
+        run: |
+          set -o pipefail
+          python -m pytest -q --tb=short 2>&1 | tee pytest-output.txt
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            grep -E 'FAILED|ERROR|assert' pytest-output.txt | tail -30 || true
+            exit "$status"
+          fi
+
+      - name: Upload pytest log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-output
+          path: backend/pytest-output.txt
 
   frontend:
     name: Frontend build
