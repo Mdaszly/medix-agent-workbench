@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import unicodedata
 from typing import Dict, List
 
 
@@ -45,6 +46,10 @@ MEDIUM_RISK_KEYWORDS = [
 ]
 
 
+def _normalize_text(text: str) -> str:
+    return unicodedata.normalize("NFKC", text or "")
+
+
 def analyze_symptoms(question: str) -> Dict:
     """
     分析症状（类似规则引擎的症状分类器）
@@ -79,6 +84,7 @@ def analyze_symptoms(question: str) -> Dict:
         }
     }
     """
+    question = _normalize_text(question)
     symptoms = []
     
     # 遍历所有风险关键词，提取匹配的症状
@@ -146,6 +152,7 @@ def assess_risk(question: str) -> Dict:
         }
     }
     """
+    question = _normalize_text(question)
     # 高风险判断（类似 anyMatch 操作）
     # Java: if (HIGH_RISK_KEYWORDS.stream().anyMatch(question::contains)) { ... }
     if any(word in question for word in HIGH_RISK_KEYWORDS):
