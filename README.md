@@ -1,6 +1,6 @@
 # 医路通 AI 医疗 Agent 工作台
 
-医路通是一个面向学习、作品集和技术面试展示的医疗 Agent 项目。它把 FastAPI 后端、Vue3 工作台、LangGraph 状态机、Dify 可选编排、RAG 医学知识库、规则 Skills、SQLite 会话记忆和医疗合规边界整合到一个可本地复现的演示系统中。
+医路通是一个面向学习、技术探索和开源贡献的医疗 Agent 项目。它把 FastAPI 后端、Vue3 工作台、LangGraph 状态机、Dify 可选编排、RAG 医学知识库、规则 Skills、SQLite 会话记忆和医疗合规边界整合到一个可本地复现的演示系统中。
 
 > 免责声明：本项目仅用于健康科普、预问诊流程和 AI 工程实践展示，不能替代医生诊断、处方或治疗。请不要将本项目用于真实医疗决策。
 
@@ -11,7 +11,7 @@
 - **Dify 可选增强**：本地 Skills 通过 HTTP tools 暴露给 Dify，便于在 Dify 画布上搭建可配置工作流。
 - **离线可运行**：不配置真实 LLM 或 Dify 时，仍可使用本地规则 + RAG 知识库完成核心问诊演示。
 - **可观测体验**：前端展示 agent trace、thinking steps、fallback 状态、风险等级和推荐科室。
-- **开源友好**：提供测试、Docker、CI、配置样例和演示文档，适合面试官快速审阅。
+- **开源友好**：提供测试、Docker、CI、配置样例和完整文档，适合开发者快速上手和二次开发。
 
 ## 界面预览
 
@@ -23,10 +23,10 @@
 | --- | --- |
 | ![高风险 Interrupt](docs/assets/high-risk-interrupt.png) | ![Dify 工作流](docs/assets/dify-workflow.png) |
 
-## 面试官 3 分钟看点
+## 快速演示要点
 
 1. 前端切换 **LangGraph**，展示显式状态机 trace 与 thinking steps。
-2. 发送普通问诊，说明本地规则 + RAG + 可选 LLM 的降级链路。
+2. 发送普通问诊，演示本地规则 + RAG + 可选 LLM 的降级链路。
 3. 发送高风险症状，展示 interrupt/resume 的人机协同安全边界。
 4. 说明 Dify 是可选编排层，失败时自动 fallback 到 LangGraph。
 5. 强调医疗合规：不确诊、不开处方、保留免责声明。
@@ -178,7 +178,7 @@ Dify 在本项目中是可选增强，不是本地演示的前置条件。推荐
 
 - `docs/ARCHITECTURE.md`：架构和请求链路说明。
 - `docs/DEPLOYMENT.md`：Docker、本地部署和公开部署注意事项。
-- `docs/DEMO.md`：面试演示脚本和截图清单。
+- `docs/DEMO.md`：演示脚本和截图清单。
 - `docs/dify-demo/ENTERPRISE_WORKFLOW.md`：Dify 企业感工作流搭建指南。
 
 ## License
