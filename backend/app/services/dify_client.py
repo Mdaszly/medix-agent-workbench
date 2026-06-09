@@ -148,7 +148,6 @@ class DifyIntegration:
     
     def __init__(self):
         self._client: Optional[DifyClient] = None
-        self._enabled = self._check_dify_config()
     
     def _check_dify_config(self) -> bool:
         """检查Dify配置是否完整"""
@@ -157,7 +156,7 @@ class DifyIntegration:
     @property
     def enabled(self) -> bool:
         """Dify是否可用"""
-        return self._enabled
+        return self._check_dify_config()
     
     def get_client(self) -> DifyClient:
         """获取Dify客户端实例"""

@@ -7,17 +7,8 @@ on:
 
 jobs:
   backend:
-    name: Backend tests (${{ matrix.test_file }})
+    name: Backend tests
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test_file:
-          - test_agent_gateway.py
-          - test_dify_integration.py
-          - test_langgraph.py
-          - test_medical_answer.py
-          - test_security_boundaries.py
     defaults:
       run:
         working-directory: backend
@@ -43,7 +34,7 @@ jobs:
           PYTHONUTF8: "1"
           LANG: "C.UTF-8"
           LC_ALL: "C.UTF-8"
-        run: python -m pytest tests/${{ matrix.test_file }} -q --tb=short
+        run: python -m pytest -q --tb=short
 
   frontend:
     name: Frontend build

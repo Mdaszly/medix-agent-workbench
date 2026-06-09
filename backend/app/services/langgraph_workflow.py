@@ -358,6 +358,12 @@ def _format_result(
     pending_next: tuple = (),
 ) -> Dict[str, Any]:
     interrupted = bool(result.get("__interrupt__")) or bool(pending_next)
+    if (
+        not interrupted
+        and result.get("risk_level") == "高风险"
+        and not (result.get("answer") or "").strip()
+    ):
+        interrupted = True
     out = {k: v for k, v in result.items() if not k.startswith("__")}
     out["session_id"] = session_id
     out["interrupted"] = interrupted
