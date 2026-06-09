@@ -45,6 +45,9 @@ jobs:
               tail -120 pytest-output.txt
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            grep -E 'FAILED|ERROR' pytest-output.txt | head -20 | while IFS= read -r line; do
+              echo "::error title=pytest::${line}"
+            done
             exit "$status"
           fi
 
