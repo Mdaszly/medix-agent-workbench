@@ -352,13 +352,20 @@ def get_compiled_graph():
     return _compiled_graph
 
 
-def _format_result(result: Dict[str, Any], session_id: str) -> Dict[str, Any]:
-    interrupted = bool(result.get("__interrupt__"))
+def _format_result(
+    result: Dict[str, Any],
+    session_id: str,
+    pending_next: tuple = (),
+) -> Dict[str, Any]:
+    interrupted = bool(result.get("__interrupt__")) or bool(pending_next)
     out = {k: v for k, v in result.items() if not k.startswith("__")}
     out["session_id"] = session_id
     out["interrupted"] = interrupted
     if interrupted:
-        out["interrupt_payload"] = result["__interrupt__"]
+        if result.get("__interrupt__"):
+            out["interrupt_payload"] = result["__interrupt__"]
+        elif pending_next:
+            out["interrupt_payload"] = [{"next": list(pending_next)}]
     return out
 
 
@@ -394,7 +401,8 @@ def run_workflow(
     )
 
     result = graph.invoke(initial, config)
-    return _format_result(result, sid)
+    snap = graph.get_state(config)
+    return _format_result(result, sid, pending_next=tuple(snap.next or ()))
 
 
 def resume_workflow(session_id: str, confirmed: bool = True) -> Dict[str, Any]:
@@ -417,7 +425,8 @@ def resume_workflow(session_id: str, confirmed: bool = True) -> Dict[str, Any]:
         }
 
     result = graph.invoke(Command(resume=confirmed), config)
-    formatted = _format_result(result, session_id)
+    snap = graph.get_state(config)
+    formatted = _format_result(result, session_id, pending_next=tuple(snap.next or ()))
     if not formatted.get("interrupted"):
         formatted.update(
             _trace(
